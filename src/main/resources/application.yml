@@ -1,2 +1,11 @@
 spring:
   application.name: hhplus-tdd
+
+---
+
+spring:
+  config:
+    activate:
+      on-profile: "local"
+server:
+  port: 7071
