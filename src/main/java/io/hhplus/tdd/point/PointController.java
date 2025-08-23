@@ -1,10 +1,12 @@
 package io.hhplus.tdd.point;
 
 import io.hhplus.tdd.CommonResponse;
+import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -12,6 +14,7 @@ import java.util.List;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/point")
+@Validated
 public class PointController {
 
     private static final Logger log = LoggerFactory.getLogger(PointController.class);
@@ -22,7 +25,7 @@ public class PointController {
      */
     @GetMapping("{id}")
     public CommonResponse point(
-            @PathVariable long id
+            @PathVariable @Min(1) long id
     ) {
         return pointService.getUserPoint(id);
     }
@@ -32,7 +35,7 @@ public class PointController {
      */
     @GetMapping("{id}/histories")
     public CommonResponse history(
-            @PathVariable long id
+            @PathVariable @Min(1) long id
     ) {
         return pointService.getUserPointHistories(id);
     }
@@ -42,7 +45,7 @@ public class PointController {
      */
     @PatchMapping("{id}/charge")
     public CommonResponse charge(
-            @PathVariable long id,
+            @PathVariable @Min(1) long id,
             @RequestBody long amount
     ) {
         return pointService.chargeUserPoint(id, amount);
@@ -53,7 +56,7 @@ public class PointController {
      */
     @PatchMapping("{id}/use")
     public CommonResponse use(
-            @PathVariable long id,
+            @PathVariable @Min(1) long id,
             @RequestBody long amount
     ) {
         return pointService.useUserPoint(id, amount);

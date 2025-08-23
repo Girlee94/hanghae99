@@ -28,6 +28,9 @@ public class PointService {
     }
 
     public CommonResponse chargeUserPoint(long id, long amount) {
+        if (amount < 1) {
+            throw new IllegalArgumentException("올바른 충전 금액이 아닙니다.");
+        }
         long chargePoint = getUserLastAmount(id) + amount;
         UserPoint userPoint = insertOrUpdateUserPoint(id, amount, chargePoint, TransactionType.CHARGE);
 
