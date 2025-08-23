@@ -2,9 +2,10 @@ package io.hhplus.tdd;
 
 import io.hhplus.tdd.database.PointHistoryTable;
 import io.hhplus.tdd.database.UserPointTable;
+import io.hhplus.tdd.point.PointHistory;
 import io.hhplus.tdd.point.PointService;
+import io.hhplus.tdd.point.TransactionType;
 import io.hhplus.tdd.point.UserPoint;
-import jakarta.validation.ConstraintViolationException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -12,12 +13,13 @@ import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest
@@ -29,6 +31,7 @@ public class TestPointController {
 
     private PointService pointService;
     private UserPointTable userPointTable;
+    private PointHistoryTable pointHistoryTable;
 
     @BeforeEach
     void setUp() {
@@ -54,10 +57,34 @@ public class TestPointController {
         // given
         long userId = 1L;
         long amount = 0L;
-        Mockito.when(userPointTable.selectById(userId)).thenReturn(new UserPoint(userId, 1000, System.currentTimeMillis()));
-        Mockito.when(userPointTable.insertOrUpdate(userId, 1000L)).thenReturn(new UserPoint(userId, 1000, System.currentTimeMillis()));
 
         // when & then
         assertThrows(IllegalArgumentException.class, () -> pointService.chargeUserPoint(userId, amount));
+    }
+
+    @Test
+    @DisplayName("포인트 충전 요청 및 히스토리 기록")
+    void givenUserPoint_whenChargeUserPoint() {
+        // given
+        long userId = 1L;
+        long lastPoint = 1000L;
+        long chargePoint = 2000L;
+        long finalPoint = lastPoint + chargePoint;
+        long chargeTime = System.currentTimeMillis();
+        Mockito.when(userPointTable.selectById(userId)).thenReturn(new UserPoint(userId, lastPoint, System.currentTimeMillis()));
+        Mockito.when(userPointTable.insertOrUpdate(userId, chargePoint)).thenReturn(new UserPoint(userId, finalPoint, chargeTime));
+        Mockito.when(pointHistoryTable.insert(userId, chargePoint, TransactionType.CHARGE, chargeTime)).thenReturn(new PointHistory(1L, userId, chargePoint, TransactionType.CHARGE, chargeTime));
+
+        //when
+        CommonResponse<UserPoint> userPointResponse = pointService.chargeUserPoint(userId, chargePoint);
+        UserPoint userPoint = userPointResponse.getData();
+
+        //then
+        assertEquals(finalPoint, userPoint.point());
+
+        Mockito.verify(userPointTable, Mockito.times(1)).selectById(userId);
+        Mockito.verify(userPointTable, Mockito.times(1)).insertOrUpdate(userId, finalPoint);
+
+        Mockito.verify(pointHistoryTable, Mockito.times(1)).insert(eq(userId), eq(chargePoint), eq(TransactionType.CHARGE), anyLong());
     }
 }
