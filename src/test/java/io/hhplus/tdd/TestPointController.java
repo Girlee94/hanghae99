@@ -52,6 +52,23 @@ public class TestPointController {
     }
 
     @Test
+    @DisplayName("유저 포인트 정보 조회")
+    void getUserPoint() {
+        // given
+        long userId = 1L;
+        long amount = 1000L;
+        Mockito.when(userPointTable.selectById(userId)).thenReturn(new UserPoint(userId, amount, System.currentTimeMillis()));
+
+        // when
+        CommonResponse response = pointService.getUserPoint(userId);
+        UserPoint userPoint = (UserPoint) response.getData();
+
+        // then
+        assertEquals(userPoint.id(), userId);
+        assertEquals(userPoint.point(), amount);
+    }
+
+    @Test
     @DisplayName("0원으로 포인트 충전 요청 시 실패")
     void givenZeroUserPoint_whenChargeUserPoint() {
         // given
